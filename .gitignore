@@ -44,3 +44,6 @@ next-env.d.ts
 
 # configuração local do Claude Code
 /.claude/
+
+# saídas do /brag (o vídeo publicado fica em public/video/)
+/brag-output*/

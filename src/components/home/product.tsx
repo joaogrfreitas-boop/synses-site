@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Container, Eyebrow, Heading } from "./primitives";
+import { ProductVideo } from "./product-video";
 
 // Telas reais do app (build de produção local, conta local fictícia "Marina Souza · Ateliê Bem Feito", consultor simulado e
 // planilhas fictícias de camisetas e canecas), capturadas a 1440 × 900 em 2x.
@@ -57,7 +58,11 @@ export function Product() {
           </p>
         </div>
 
-        <ol className="mt-16 space-y-16 md:space-y-24">
+        <div className="mt-12">
+          <ProductVideo />
+        </div>
+
+        <ol className="mt-20 space-y-16 md:space-y-24">
           {screens.map((screen, index) => (
             <li
               key={screen.title}
