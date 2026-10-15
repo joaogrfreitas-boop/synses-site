@@ -43,7 +43,7 @@ O envio usa a API do Resend a partir de um **subdomínio** (`forms.synses.app`),
 3. Na Vercel (Settings → Environment Variables), configure as variáveis descritas em `.env.example`:
    - `RESEND_API_KEY`
    - `CONTACT_FROM_EMAIL` (ex.: `Site Synses <contato@forms.synses.app>`)
-   - `CONTACT_TO_EMAIL` (seu e-mail corporativo já existente)
+   - `CONTACT_TO_EMAIL` (`jfreitas@synses.app`)
 
 As respostas usam `reply-to` com o e-mail de quem preencheu o formulário.
 

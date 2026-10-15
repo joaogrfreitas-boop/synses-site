@@ -12,8 +12,8 @@ export const company = {
   address: "Av. Paulista, 1106, Sala 01 · Bela Vista · São Paulo/SP · CEP 01310-914",
   addressLines: ["Av. Paulista, 1106, Sala 01 · Bela Vista", "São Paulo/SP · CEP 01310-914"],
   cnpj: "07.453.406/0001-47",
-  contactEmail: "contact@synses.app",
-  privacyEmail: "contact@synses.app",
+  contactEmail: "jfreitas@synses.app",
+  privacyEmail: "jfreitas@synses.app",
   privacyContact: "João Freitas",
 };
 
