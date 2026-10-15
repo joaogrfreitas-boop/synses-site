@@ -21,6 +21,11 @@ const LIMITS: Record<ContactField, number> = {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** Lê a variável sem espaços, quebras de linha ou aspas coladas nas pontas ao cadastrar na Vercel. */
+function env(name: string) {
+  return (process.env[name] ?? "").trim().replace(/^(["'])(.*)\1$/, "$2").trim();
+}
+
 function failureMessage() {
   const fallback = isPending(company.contactEmail) ? "" : ` ou escreva para ${company.contactEmail}`;
   return `Não conseguimos enviar agora. Tente de novo em alguns minutos${fallback}.`;
@@ -67,9 +72,9 @@ export async function submitContact(_prev: ContactState, formData: FormData): Pr
     values.mensagem || "(não informado)",
   ].join("\n");
 
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.CONTACT_FROM_EMAIL;
-  const to = process.env.CONTACT_TO_EMAIL;
+  const apiKey = env("RESEND_API_KEY");
+  const from = env("CONTACT_FROM_EMAIL");
+  const to = env("CONTACT_TO_EMAIL");
 
   if (!apiKey || !from || !to) {
     if (process.env.NODE_ENV !== "production") {
@@ -98,7 +103,10 @@ export async function submitContact(_prev: ContactState, formData: FormData): Pr
     });
 
     if (!response.ok) {
-      console.error(`[contato] Resend respondeu ${response.status}.`);
+      // O corpo de erro do Resend traz só o tipo e a mensagem (nunca a chave); vai para o log, não para a pessoa.
+      const detalhe = await response.text().catch(() => "");
+      const formatoDaChave = apiKey.startsWith("re_") ? "" : " A chave não começa com re_.";
+      console.error(`[contato] Resend respondeu ${response.status}.${formatoDaChave} ${detalhe.slice(0, 300)}`);
       return { status: "error", message: failureMessage(), values };
     }
   } catch (error) {
