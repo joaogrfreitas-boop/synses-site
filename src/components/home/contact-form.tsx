@@ -9,13 +9,17 @@ const initialState: ContactState = { status: "idle" };
 const inputClass =
   "mt-2 block w-full rounded-md border border-field bg-white px-3.5 py-2.5 text-navy placeholder:text-faint transition-colors focus:border-navy aria-[invalid=true]:border-[#b54747]";
 
+type Variant = "full" | "compact";
+
 function Field({
+  id,
   name,
   label,
   optional,
   state,
   children,
 }: {
+  id: string;
   name: ContactField;
   label: string;
   optional?: boolean;
@@ -25,13 +29,13 @@ function Field({
   const error = state.fieldErrors?.[name];
   return (
     <div>
-      <label htmlFor={name} className="text-sm font-medium text-navy">
+      <label htmlFor={id} className="text-sm font-medium text-navy">
         {label}
         {optional && <span className="font-normal text-ink"> (opcional)</span>}
       </label>
       {children}
       {error && (
-        <p id={`${name}-erro`} className="mt-1.5 text-sm text-[#b54747]">
+        <p id={`${id}-erro`} className="mt-1.5 text-sm text-[#b54747]">
           {error}
         </p>
       )}
@@ -39,8 +43,15 @@ function Field({
   );
 }
 
-export function ContactForm() {
+/**
+ * "full": o formulário da seção Contato. "compact": o do topo da página (só nome, e-mail e empresa).
+ * Os dois enviam para a mesma ação; `origem` diz no e-mail de qual deles o contato veio.
+ */
+export function ContactForm({ variant = "full" }: { variant?: Variant }) {
   const [state, formAction, pending] = useActionState(submitContact, initialState);
+  const compact = variant === "compact";
+  // Os dois formulários ficam na mesma página: os ids precisam ser únicos.
+  const id = (name: string) => (compact ? `topo-${name}` : name);
 
   if (state.status === "success") {
     return (
@@ -55,84 +66,89 @@ export function ContactForm() {
   }
 
   const invalid = (name: ContactField) => Boolean(state.fieldErrors?.[name]);
-  const describedBy = (name: ContactField) => (invalid(name) ? `${name}-erro` : undefined);
+  const describedBy = (name: ContactField) => (invalid(name) ? `${id(name)}-erro` : undefined);
+  const input = (name: ContactField, props: React.InputHTMLAttributes<HTMLInputElement>) => (
+    <input
+      id={id(name)}
+      name={name}
+      defaultValue={state.values?.[name]}
+      aria-invalid={invalid(name)}
+      aria-describedby={describedBy(name)}
+      className={inputClass}
+      {...props}
+    />
+  );
+
+  const essentials = (
+    <>
+      <Field id={id("nome")} name="nome" label="Nome" state={state}>
+        {input("nome", { type: "text", autoComplete: "name", required: true, maxLength: 120 })}
+      </Field>
+      <Field id={id("email")} name="email" label="E-mail" state={state}>
+        {input("email", { type: "email", autoComplete: "email", required: true, maxLength: 254 })}
+      </Field>
+      <Field id={id("empresa")} name="empresa" label="Empresa" state={state}>
+        {input("empresa", { type: "text", autoComplete: "organization", required: true, maxLength: 160 })}
+      </Field>
+    </>
+  );
+
+  const privacy = (
+    <p className={`leading-relaxed ${compact ? "text-xs" : "text-sm sm:max-w-xs"}`}>
+      Ao enviar, você concorda com o tratamento dos seus dados conforme a{" "}
+      <Link href="/privacidade" className="text-navy underline decoration-line-strong underline-offset-2 hover:decoration-navy">
+        Política de Privacidade
+      </Link>
+      .
+    </p>
+  );
+
+  const submit = (
+    <button
+      type="submit"
+      disabled={pending}
+      className={`inline-flex shrink-0 justify-center rounded-md bg-navy px-5 py-3 font-medium text-white transition-colors hover:bg-navy-hover disabled:cursor-wait disabled:opacity-70 ${compact ? "w-full" : ""}`}
+    >
+      {pending ? "Enviando…" : compact ? "Quero participar do piloto" : "Quero conhecer a Synses"}
+    </button>
+  );
 
   return (
-    <form action={formAction} className="space-y-5 rounded-xl border border-line bg-ice p-6 sm:p-8">
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field name="nome" label="Nome" state={state}>
-          <input
-            id="nome"
-            name="nome"
-            type="text"
-            autoComplete="name"
-            required
-            maxLength={120}
-            defaultValue={state.values?.nome}
-            aria-invalid={invalid("nome")}
-            aria-describedby={describedBy("nome")}
-            className={inputClass}
-          />
-        </Field>
-        <Field name="email" label="E-mail" state={state}>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            maxLength={254}
-            defaultValue={state.values?.email}
-            aria-invalid={invalid("email")}
-            aria-describedby={describedBy("email")}
-            className={inputClass}
-          />
-        </Field>
-        <Field name="empresa" label="Empresa" state={state}>
-          <input
-            id="empresa"
-            name="empresa"
-            type="text"
-            autoComplete="organization"
-            required
-            maxLength={160}
-            defaultValue={state.values?.empresa}
-            aria-invalid={invalid("empresa")}
-            aria-describedby={describedBy("empresa")}
-            className={inputClass}
-          />
-        </Field>
-        <Field name="segmento" label="Segmento" optional state={state}>
-          <input
-            id="segmento"
-            name="segmento"
-            type="text"
-            maxLength={120}
-            placeholder="Ex.: varejo, alimentação"
-            defaultValue={state.values?.segmento}
-            aria-invalid={invalid("segmento")}
-            aria-describedby={describedBy("segmento")}
-            className={inputClass}
-          />
-        </Field>
-      </div>
+    <form
+      action={formAction}
+      className={compact ? "space-y-4" : "space-y-5 rounded-xl border border-line bg-ice p-6 sm:p-8"}
+    >
+      <input type="hidden" name="origem" value={compact ? "topo" : "contato"} />
 
-      <Field name="mensagem" label="O que você gostaria de entender sobre o seu negócio?" optional state={state}>
-        <textarea
-          id="mensagem"
-          name="mensagem"
-          rows={4}
-          maxLength={2000}
-          defaultValue={state.values?.mensagem}
-          aria-invalid={invalid("mensagem")}
-          aria-describedby={describedBy("mensagem")}
-          className={`${inputClass} resize-y`}
-        />
-      </Field>
+      {compact ? (
+        essentials
+      ) : (
+        <>
+          <div className="grid gap-5 sm:grid-cols-2">
+            {essentials}
+            <Field id={id("segmento")} name="segmento" label="Segmento" optional state={state}>
+              {input("segmento", { type: "text", maxLength: 120, placeholder: "Ex.: varejo, alimentação" })}
+            </Field>
+          </div>
+
+          <Field id={id("mensagem")} name="mensagem" label="O que você gostaria de entender sobre o seu negócio?" optional state={state}>
+            <textarea
+              id={id("mensagem")}
+              name="mensagem"
+              rows={4}
+              maxLength={2000}
+              defaultValue={state.values?.mensagem}
+              aria-invalid={invalid("mensagem")}
+              aria-describedby={describedBy("mensagem")}
+              className={`${inputClass} resize-y`}
+            />
+          </Field>
+        </>
+      )}
 
       <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
-        <label htmlFor="website">Não preencha este campo</label>
-        <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
+        <label htmlFor={id("website")}>Não preencha este campo</label>
+        <input id={id("website")} name="website" type="text" tabIndex={-1} autoComplete="off" />
       </div>
 
       {state.status === "error" && state.message && (
@@ -141,22 +157,17 @@ export function ContactForm() {
         </p>
       )}
 
-      <div className="flex flex-col gap-4 pt-1 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm leading-relaxed sm:max-w-xs">
-          Ao enviar, você concorda com o tratamento dos seus dados conforme a{" "}
-          <Link href="/privacidade" className="text-navy underline decoration-line-strong underline-offset-2 hover:decoration-navy">
-            Política de Privacidade
-          </Link>
-          .
-        </p>
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex shrink-0 justify-center rounded-md bg-navy px-5 py-3 font-medium text-white transition-colors hover:bg-navy-hover disabled:cursor-wait disabled:opacity-70"
-        >
-          {pending ? "Enviando…" : "Quero conhecer a Synses"}
-        </button>
-      </div>
+      {compact ? (
+        <div className="space-y-3 pt-1">
+          {submit}
+          {privacy}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4 pt-1 sm:flex-row sm:items-center sm:justify-between">
+          {privacy}
+          {submit}
+        </div>
+      )}
     </form>
   );
 }

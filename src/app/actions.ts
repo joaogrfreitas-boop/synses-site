@@ -60,8 +60,10 @@ export async function submitContact(_prev: ContactState, formData: FormData): Pr
     return { status: "error", message: "Revise os campos destacados.", fieldErrors, values };
   }
 
+  const origem = String(formData.get("origem") ?? "") === "topo" ? "formulário do topo (Participe do piloto)" : "seção Contato";
   const text = [
     "Novo contato pelo site synses.app",
+    `Origem: ${origem}`,
     "",
     `Nome: ${values.nome}`,
     `E-mail: ${values.email}`,
